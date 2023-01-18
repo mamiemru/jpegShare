@@ -1,0 +1,4 @@
+flask-restx==1.0.3
+Flask-Cors==3.0.10
+Pillow==9.0.3
+Werkzeug==2.2.2
