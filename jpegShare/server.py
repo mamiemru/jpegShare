@@ -1,4 +1,7 @@
 
+import os
+from pathlib import Path
+
 from flask import Flask
 from flask import Response
 from flask import send_file
@@ -13,82 +16,31 @@ app = Flask(__name__)
 api = Api(app)
 CORS(app)
 
-image_namespace = api.namespace('attachement')
+tickets_namespace = api.namespace('')
+articles_namespace = api.namespace('articles')
 
 attachement_request = api.parser()
 attachement_request.add_argument('file', location='files', type=FileStorage, required=True)
 
-class AttachementEndpoints(Resource):
+@tickets_namespace.route('/<string:iso_date_prefix>/<string:image_name>')
+class TicketsNameSpace(Resource):
+    
+    def get(self, iso_date_prefix, image_name):
+        print(f"{iso_date_prefix=}, {image_name=}")
+        location = Path("D:\\minio\\ticket") / 'ticket' / iso_date_prefix / image_name
+        if os.path.exists(location):
+            return send_file(location, mimetype='image/png')
+        return Response(image_name, 404) 
 
-    def __getImagePath(categorie : str, imageName : str) -> str:
-        if categorie == 'ticket':
-            return ImagesService.getTicketImageLink(f"{imageName}.0")
-        elif categorie == 'icon':
-            return ImagesService.getIconsImageLink(imageName)
-        elif categorie == 'article':
-            return ImagesService.getArticlesImageLink(imageName)
-        return None
-
-    def get(self, categorie, imageName):
-
-        filename = AttachementEndpoints.__getImagePath(categorie, imageName)
-
-        if filename is None:
-            return Response('', 404)
-
-        if not ImagesService.locationExist(filename):
-            return Response(imageName, 404)
-
-        return send_file(filename, mimetype='image/png')
-
-    def post(self, categorie, imageName):
-
-        filename = AttachementEndpoints.__getImagePath(categorie, imageName)
-
-        if filename is None:
-            return Response('', 400)
-
-        if ImagesService.locationExist(filename):
-            return Response(imageName, 409)
-
-        args = attachement_request.parse_args()
-        uploaded_file = args['file']
-        uploaded_file.save(filename)
-
-        if ImagesService.locationExist(filename):
-            return Response(imageName, 201)
-        
-        return Response(None, 500)
-
-@image_namespace.route('/ticket/<string:imageName>')
-class AttachementTicketEndpoints(AttachementEndpoints):
-
-    def get(self, imageName):
-        return super().get('ticket', imageName)
-
-    @api.expect(attachement_request)
-    def post(self, imageName):
-        return super().post('ticket', imageName)
-        
-@image_namespace.route('/icon/<string:imageName>')
-class AttachementIconEndpoints(AttachementEndpoints):
-
-    def get(self, imageName):
-        return super().get('icon', imageName)
-
-    @api.expect(attachement_request)
-    def post(self, imageName):
-        return super().post('icon', imageName)
-        
-@image_namespace.route('/article/<string:imageName>')
-class AttachementArticleEndpoints(AttachementEndpoints):
-
-    def get(self, imageName):
-        return super().get('article', imageName)
-
-    @api.expect(attachement_request)
-    def post(self, imageName):
-        return super().post('article', imageName)
+@articles_namespace.route('/<string:image_name>')
+class ArticlesNameSpace(Resource):
+    
+    def get(self, image_name):
+        print(f"{image_name=}")
+        location = Path("D:\\minio\\ticket") / 'article' / 'articles' / image_name
+        if os.path.exists(location):
+            return send_file(location, mimetype='image/png')
+        return Response(image_name, 404)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=9001)
