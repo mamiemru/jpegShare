@@ -18,6 +18,7 @@ CORS(app)
 
 tickets_namespace = api.namespace('')
 articles_namespace = api.namespace('articles')
+enseignes_namespace = api.namespace('enseignes')
 
 attachement_request = api.parser()
 attachement_request.add_argument(
@@ -40,6 +41,16 @@ class ArticlesNameSpace(Resource):
     def get(self, image_name):
         print(f"{image_name=}")
         location = Path("D:\\minio\\ticket") / 'article' / 'articles' / image_name
+        if os.path.exists(location):
+            return send_file(location, mimetype='image/png')
+        return Response(image_name, 404)
+
+@enseignes_namespace.route('/<string:image_name>')
+class EnseignesNameSpace(Resource):
+
+    def get(self, image_name):
+        print(f"{image_name=}")
+        location = Path("D:\\minio\\ticket") / 'enseignes' / 'enseignes' / image_name
         if os.path.exists(location):
             return send_file(location, mimetype='image/png')
         return Response(image_name, 404)
